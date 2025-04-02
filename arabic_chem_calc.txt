@@ -1,0 +1,477 @@
+if __name__ == "__main__":
+  # Import Streamlit at the top level
+  import streamlit as st
+
+  def main_streamlit():
+    st.title("آلة حاسبة الكيمياء")
+    st.write("مرحباً بك في آلة حاسبة الكيمياء! اختر عملية من الشريط الجانبي للبدء.")
+    
+    menu_options = [
+      "حسابات المول والكتلة", 
+      "الكيمياء الوزنية", 
+      "تركيز المحلول", 
+      "تحويلات الوحدات", 
+      "حساب التركيب المئوي"
+    ]
+
+    option = st.sidebar.selectbox("اختر عملية", menu_options)
+
+    if option == "حسابات المول والكتلة":
+      st.header("حسابات المول والكتلة")
+
+      sub_option = st.selectbox("اختر نوع الحساب:", 
+                              ["إيجاد المولات", "إيجاد الكتلة", "إيجاد الكتلة المولية للمركب", "الكتلة المولية للعنصر"])
+
+      if sub_option == "إيجاد المولات":
+        st.subheader("إيجاد عدد المولات")
+        mass = st.number_input("الكتلة (جرام):", placeholder="10.0", value=None, min_value=0.0,step=0.1)
+        element = st.text_input("اسم العنصر أو رمزه:", placeholder="H").capitalize()
+
+        if st.button("حساب"):
+          if element in elements:
+            element_obj = elements[element]
+            moles = mass/element_obj.atomic_mass
+            st.success(f"عدد المولات: {moles:.4f} مول")
+          else:
+            st.warning("لم يتم العثور على العنصر. يرجى تقديم كتلته المولية.")
+            molar_mass = st.number_input("الكتلة المولية (جرام/مول):", min_value=0.0001, value=1.0, step=0.1)
+            if st.button("حساب باستخدام الكتلة المولية المخصصة"):
+                moles = mass/molar_mass
+                st.success(f"عدد المولات: {moles:.4f} مول")
+
+      elif sub_option == "إيجاد الكتلة":
+        st.subheader("إيجاد الكتلة")
+        moles = st.number_input("عدد المولات (مول):", placeholder="1.0", value=None, min_value=0.0, step=0.1)
+        element = st.text_input("اسم العنصر أو رمزه:", placeholder="H").capitalize()
+
+        if st.button("حساب"):
+          if element in elements:
+            element_obj = elements[element]
+            mass = moles*element_obj.atomic_mass
+            st.success(f"الكتلة: {mass:.4f} جرام")
+          else:
+            st.warning("لم يتم العثور على العنصر. يرجى تقديم كتلته المولية.")
+            molar_mass = st.number_input("الكتلة المولية (جرام/مول):", min_value=0.0001, value=1.0, step=0.1)
+            if st.button("حساب باستخدام الكتلة المولية المخصصة"):
+                mass = moles*molar_mass
+                st.success(f"الكتلة: {mass:.4f} جرام")
+
+      elif sub_option == "إيجاد الكتلة المولية للمركب":
+        st.subheader("الكتلة المولية للمركب")
+
+        if 'compound_mass' not in st.session_state:
+            st.session_state.compound_mass = 0
+            st.session_state.elements_added = []
+
+        st.write("الكتلة المولية الحالية للمركب: ", st.session_state.compound_mass, "جرام/مول")
+
+        if st.session_state.elements_added:
+            st.write("العناصر المضافة:")
+            for elem in st.session_state.elements_added:
+                st.write(f"- {elem}")
+
+        st.write("أضف عناصر إلى مركبك:")
+        col1, col2 = st.columns(2)
+
+        with col1:
+          element = st.text_input("اسم العنصر أو رمزه:", placeholder="C").capitalize()
+        with col2:
+          atoms = st.number_input("عدد الذرات:", placeholder="1", value=None, min_value=1, step=1)
+
+        if st.button("إضافة عنصر"):
+          if element in elements:
+            element_obj = elements[element]
+            mass_contribution = atoms * element_obj.atomic_mass
+            st.session_state.compound_mass += mass_contribution
+            st.session_state.elements_added.append(f"{element} × {atoms} = {mass_contribution:.4f} جرام/مول")
+            st.success(f"تمت إضافة {element} × {atoms}. الكتلة المولية الحالية: {st.session_state.compound_mass:.4f} جرام/مول")
+            st.rerun()
+          else:
+            st.error(f"لم يتم العثور على {element} في الجدول الدوري")
+
+        if st.button("إعادة ضبط المركب"):
+            st.session_state.compound_mass = 0
+            st.session_state.elements_added = []
+            st.success("تم إعادة ضبط المركب")
+            st.rerun()
+
+      elif sub_option == "الكتلة المولية للعنصر":
+        st.subheader("الكتلة المولية للعنصر")
+        element = st.text_input("اسم العنصر أو رمزه:", placeholder="Fe").capitalize()
+
+        if st.button("بحث"):
+          if element in elements:
+            element_obj = elements[element]
+            st.success(f"الكتلة المولية لـ {element}: {element_obj.atomic_mass} جرام/مول")
+          else:
+            st.error(f"{element} لا يتوافق مع أي عنصر كيميائي معروف")
+
+    elif option == "الكيمياء الوزنية":
+      st.header("الكيمياء الوزنية")
+
+      sub_option = st.selectbox("اختر نوع الحساب:", 
+                              ["الصيغ التجريبية والجزيئية", "صيغ الهيدرات", "حساب النسبة المئوية للناتج"])
+
+      if sub_option == "الصيغ التجريبية والجزيئية":
+        st.subheader("الصيغ التجريبية والجزيئية")
+         
+        # Initialize session state variables
+        if 'elements_added' not in st.session_state:
+          st.session_state.elements_added = []
+
+        # Display current elements added in a simple list like compound molar mass
+        if st.session_state.elements_added:
+          st.write("العناصر المضافة:")
+          for elem, mass, moles in st.session_state.elements_added:
+            st.write(f"- {elem}: {mass:.4f} جرام")
+
+        # Input fields for adding elements
+        col1, col2 = st.columns(2)
+        with col1:
+          element = st.text_input("اسم العنصر أو رمزه:", placeholder="C").capitalize()
+        with col2:
+          mass = st.number_input("كتلة العنصر (جرام):", value=None, placeholder="10.00", min_value=0.0, step=1.00)
+
+        # Add element to the list
+        if st.button("إضافة عنصر"):
+          if element in elements: 
+            element_obj = elements[element]
+            moles = mass / element_obj.atomic_mass
+            # Store element, mass, and moles
+            st.session_state.elements_added.append((element, mass, moles))
+            st.success(f"تمت إضافة {element}: {mass:.4f} جرام")
+            st.rerun()
+          else:
+            st.error(f"لم يتم العثور على {element} في الجدول الدوري")
+
+        # Calculate empirical formula
+        if st.button("حساب الصيغة التجريبية"):
+          if len(st.session_state.elements_added) >= 1:
+            # Extract moles for all elements
+            moles_dict = {elem: moles for elem, _, moles in st.session_state.elements_added}
+      
+            # Find the minimum moles
+            min_moles = min(moles_dict.values())
+      
+            # Calculate the ratio for each element
+            ratio_dict = {elem: moles/min_moles for elem, moles in moles_dict.items()}
+      
+            # Find smallest multiplier to get whole numbers
+            decimals = [val % 1 for val in ratio_dict.values() if val % 1 != 0]
+            if decimals:
+              denominators = [round(1/d) for d in decimals]
+              lcm = denominators[0]
+              for num in denominators[1:]:
+                lcm = (lcm*num)//gcd(lcm, num)
+              multiplier = lcm
+            else:
+              multiplier = 1
+      
+            # Calculate final whole-number ratios
+            final_ratios = {elem: round(num*multiplier) for elem, num in ratio_dict.items()}
+      
+            # Generate the empirical formula with subscripts
+            subscript_digits = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
+            empirical_formula = "".join([f"{elem}{str(num).translate(subscript_digits) if num>1 else''}" 
+                           for elem, num in final_ratios.items()])
+      
+            # Display formula
+            st.success(f"الصيغة التجريبية: {empirical_formula}")
+          else:
+            st.error("الرجاء إضافة عنصر واحد على الأقل لحساب الصيغة التجريبية.")
+
+        if st.button("إعادة ضبط جميع العناصر"):
+          st.session_state.elements_added = []
+          st.success("تم إعادة ضبط جميع العناصر!")
+          st.rerun()
+        
+      
+      elif sub_option == "صيغ الهيدرات":
+        st.subheader("صيغ الهيدرات")
+
+        #initializing hydrated and anhydrous salt to 0
+        if 'hydrated_salt_mass' not in st.session_state:
+          st.session_state.hydrated_salt_mass= 0
+          
+        if 'anhydrous_salt_mass' not in st.session_state:
+          st.session_state.anhydrous_salt_mass= 0
+
+        if.session_state.anhydrous_salt_molar_mass.
+
+        if 'anhydrous_salt_molar_mass' not in st.session_state:
+            st.session_state.anhydrous_salt_molar_mass = 0
+            st.session_state.elements_stored = []
+
+        if st.session_state.elements_stored:
+            st.write("العناصر المضافة:")
+            for elem in st.session_state.elements_stored:
+                st.write(f"- {elem}")
+
+        col1, col2 = st.columns(2)
+        with col1:
+          hydrated_salt_mass= st.number_input("كتلة الملح المائي:", placeholder="10.0", value=None, min_value=0.0,step=0.1)
+        with col2:
+          anhydrous_salt_mass= st.number_input("كتلة الملح اللامائي:", placeholder="10.0", value=None, min_value=0.0,step=0.1)
+
+        st.write("‎‎ ")
+        st.write("العناصر التي يتكون منها الملح المائي:")
+        col1, col2 = st.columns(2)
+
+        with col1:
+          element_1 = st.text_input("اسم العنصر أو رمزه:", placeholder="C").capitalize()
+        with col2:
+          atoms = st.number_input("عدد الذرات:", placeholder="1", value=1, min_value=1, step=1)
+
+        if st.button("إضافة عنصر"):
+          if element_1 in elements:
+            element_obj = elements[element_1]
+            molar_mass_contribution = atoms * element_obj.atomic_mass
+            st.session_state.anhydrous_salt_molar_mass += molar_mass_contribution
+            st.session_state.elements_stored.append(f"{element_1} × {atoms} = {molar_mass_contribution:.4f} جرام/مول")
+            st.rerun()
+          else:
+            st.error(f"لم يتم العثور على {element_1} في الجدول الدوري")
+
+        if st.button("حساب صيغة الهيدرات"):
+          if len(st.session_state.elements_stored) == 0:
+            st.error("الرجاء إضافة عنصر واحد على الأقل أولاً!")
+          else:
+            water_mass = hydrated_salt_mass - anhydrous_salt_mass
+            n_water = water_mass/18.015
+            n_salt = anhydrous_salt_mass/st.session_state.anhydrous_salt_molar_mass
+            x = n_water/n_salt
+            st.success(f"صيغة الهيدرات: الملح ⋅ {round(x)}H₂O")
+                  
+        if st.button("إعادة ضبط الكل"):
+          st.session_state.hydrated_salt_mass= 0
+          st.session_state.anhydrous_salt_mass= 0
+          st.session_state.anhydrous_salt_molar_mass = 0
+          st.session_state.elements_stored = []
+          st.success("تمت إعادة الضبط بنجاح")
+          st.rerun()
+
+      
+      elif sub_option == "حساب النسبة المئوية للناتج":
+        st.header("حساب النسبة المئوية للناتج")
+
+        actual_yield = st.number_input("الناتج الفعلي (جرام):", min_value=0.0, value=1.0, step=0.1)
+        theoretical_yield = st.number_input("الناتج النظري (جرام):", min_value=0.0001, value=1.0, step=0.1)
+
+        if st.button("حساب"):
+          percentage = actual_yield/theoretical_yield*100
+          st.success(f"النسبة المئوية للناتج: {percentage:.2f}%")
+
+
+    
+    elif option == "تركيز المحلول":
+      st.header("تركيز المحلول")
+
+      sub_option = st.selectbox("اختر نوع التركيز:", 
+                              ["المولارية", "المولالية", "الكسر المولي", "النسبة المئوية بالكتلة", "النسبة المئوية بالحجم"])
+
+      if sub_option == "المولارية":
+        st.subheader("حساب المولارية")
+        calc_type = st.radio("حساب:", ["إيجاد المولارية", "إيجاد المولات", "إيجاد الحجم"])
+
+        if calc_type == "إيجاد المولارية":
+          moles = st.number_input("مولات المذاب (مول):", min_value=0.0, value=1.0, step=0.1)
+          volume = st.number_input("حجم المحلول (لتر):", min_value=0.0001, value=1.0, step=0.1)
+
+          if st.button("حساب"):
+            molarity = moles/volume
+            st.success(f"المولارية: {molarity:.4f} مول/لتر")
+
+        elif calc_type == "إيجاد المولات":
+          molarity = st.number_input("المولارية (مول/لتر):", min_value=0.0, value=1.0, step=0.1)
+          volume = st.number_input("حجم المحلول (لتر):", min_value=0.0001, value=1.0, step=0.1)
+
+          if st.button("حساب"):
+            moles = molarity * volume
+            st.success(f"مولات المذاب: {moles:.4f} مول")
+
+        elif calc_type == "إيجاد الحجم":
+          molarity = st.number_input("المولارية (مول/لتر):", min_value=0.0001, value=1.0, step=0.1)
+          moles = st.number_input("مولات المذاب (مول):", min_value=0.0, value=1.0, step=0.1)
+
+          if st.button("حساب"):
+            volume = moles / molarity
+            st.success(f"حجم المحلول: {volume:.4f} لتر")
+
+      elif sub_option == "المولالية":
+        st.subheader("حساب المولالية")
+        calc_type = st.radio("حساب:", ["إيجاد المولالية", "إيجاد المولات", "إيجاد الكتلة"])
+
+        if calc_type == "إيجاد المولالية":
+          moles = st.number_input("مولات المذاب (مول):", min_value=0.0, value=1.0, step=0.1)
+          mass = st.number_input("كتلة المذيب (كجم):", min_value=0.0001, value=1.0, step=0.1)
+
+          if st.button("حساب"):
+            molality = moles/mass
+            st.success(f"المولالية: {molality:.4f} مول/كجم")
+
+        elif calc_type == "إيجاد المولات":
+          molality = st.number_input("المولالية (مول/كجم):", min_value=0.0, value=1.0, step=0.1)
+          mass = st.number_input("كتلة المذيب (كجم):", min_value=0.0001, value=1.0, step=0.1)
+
+          if st.button("حساب"):
+            moles = molality * mass
+            st.success(f"مولات المذاب: {moles:.4f} مول")
+
+        elif calc_type == "إيجاد الكتلة":
+          molality = st.number_input("المولالية (مول/كجم):", min_value=0.0001, value=1.0, step=0.1)
+          moles = st.number_input("مولات المذاب (مول):", min_value=0.0, value=1.0, step=0.1)
+
+          if st.button("حساب"):
+            mass = moles / molality
+            st.success(f"كتلة المذيب: {mass:.4f} كجم")
+
+      elif sub_option == "الكسر المولي":
+        st.subheader("حساب الكسر المولي")
+        moles_solute = st.number_input("مولات المذاب (مول):", min_value=0.0, value=1.0, step=0.1)
+        moles_total = st.number_input("إجمالي المولات في المحلول (مول):", min_value=0.0001, value=10.0, step=0.1)
+
+        if st.button("حساب"):
+          mole_fraction = moles_solute / moles_total
+          st.success(f"الكسر المولي: {mole_fraction:.4f}")
+
+      elif sub_option == "النسبة المئوية بالكتلة":
+        st.subheader("حساب النسبة المئوية بالكتلة")
+        mass_solute = st.number_input("كتلة المذاب (جرام):", min_value=0.0, value=1.0, step=0.1)
+        mass_solution = st.number_input("كتلة المحلول (جرام):", min_value=0.0001, value=10.0, step=0.1)
+
+        if st.button("حساب"):
+          mass_percentage = (mass_solute / mass_solution) * 100
+          st.success(f"النسبة المئوية بالكتلة: {mass_percentage:.2f}%")
+
+      elif sub_option == "النسبة المئوية بالحجم":
+        st.subheader("حساب النسبة المئوية بالحجم")
+        volume_solute = st.number_input("حجم المذاب (مل):", min_value=0.0, value=1.0, step=0.1)
+        volume_solution = st.number_input("حجم المحلول (مل):", min_value=0.0001, value=10.0, step=0.1)
+
+        if st.button("حساب"):
+          volume_percentage = (volume_solute / volume_solution) * 100
+          st.success(f"النسبة المئوية بالحجم: {volume_percentage:.2f}%")
+
+    elif option == "تحويلات الوحدات":
+      st.header("تحويلات الوحدات")
+
+      sub_option = st.selectbox("اختر نوع التحويل:", 
+                               ["مولات-جسيمات", "مولات-لترات", "درجة الحرارة", "الطاقة", "الضغط"])
+
+      if sub_option == "مولات-جسيمات":
+        st.subheader("تحويل المولات-الجسيمات")
+        conv_type = st.radio("تحويل:", ["مولات إلى جسيمات", "جسيمات إلى مولات"])
+
+        if conv_type == "مولات إلى جسيمات":
+          moles = st.number_input("المولات (مول):", min_value=0.0, value=1.0, step=0.1)
+
+          if st.button("تحويل"):
+            avogadro = 6.0221367e23
+            particles = moles * avogadro
+            st.success(f"عدد الجسيمات: {particles:.4e}")
+
+        elif conv_type == "جسيمات إلى مولات":
+          particles = st.number_input("عدد الجسيمات:", min_value=0.0, value=6.02e23, step=1.0e22, format="%.2e")
+
+          if st.button("تحويل"):
+            avogadro = 6.0221367e23
+            moles = particles / avogadro
+            st.success(f"عدد المولات: {moles:.4f} مول")
+
+      elif sub_option == "مولات-لترات":
+        st.subheader("تحويلات المولات-اللترات")
+        conv_type = st.radio("تحويل:", ["مولات إلى لترات", "لترات إلى مولات"])
+
+        if conv_type == "مولات إلى لترات":
+          moles = st.number_input("عدد المولات:", min_value=0.0, value=1.0, step=0.1)
+
+          if st.button("تحويل"):
+            litres = moles*22.4
+            st.success(f"{litres} لتر في {moles} مول")
+
+        elif conv_type == "لترات إلى مولات":
+          litres = st.number_input("عدد اللترات:", min_value=0.0, value=1.0, step=0.1)
+
+          if st.button("تحويل"):
+            moles = litres/22.4
+            st.success(f"{moles} مول في {litres} لتر")
+          
+      elif sub_option == "درجة الحرارة":
+        st.subheader("تحويل درجة الحرارة")
+        conv_type = st.radio("تحويل:", ["كلفن إلى سيلزيوس", "سيلزيوس إلى كلفن"])
+
+        if conv_type == "كلفن إلى سيلزيوس":
+          kelvin = st.number_input("درجة الحرارة بالكلفن:", value=298.15, step=0.1)
+
+          if st.button("تحويل"):
+            celsius = kelvin - 273.15
+            st.success(f"درجة الحرارة بالسيلزيوس: {celsius:.2f} °C")
+
+        elif conv_type == "سيلزيوس إلى كلفن":
+          celsius = st.number_input("درجة الحرارة بالسيلزيوس:", value=25.0, step=0.1)
+
+          if st.button("تحويل"):
+            kelvin = celsius + 273.15
+            st.success(f"درجة الحرارة بالكلفن: {kelvin:.2f} K")
+
+      elif sub_option == "الطاقة":
+        st.subheader("تحويل الطاقة")
+        conv_type = st.radio("تحويل:", ["جول إلى سعرات", "سعرات إلى جول"])
+
+        if conv_type == "جول إلى سعرات":
+          joules = st.number_input("الطاقة بالجول (J):", value=4.184, step=0.1)
+
+          if st.button("تحويل"):
+            calories = joules / 4.184
+            st.success(f"الطاقة بالسعرات: {calories:.4f} سعر")
+
+        elif conv_type == "سعرات إلى جول":
+          calories = st.number_input("الطاقة بالسعرات (Cal):", value=1.0, step=0.1)
+
+          if st.button("تحويل"):
+            joules = calories * 4.184
+            st.success(f"الطاقة بالجول: {joules:.4f} J")
+
+      elif sub_option == "الضغط":
+        st.subheader("تحويل الضغط")
+        conv_type = st.selectbox("تحويل:", ["ضغط جوي إلى باسكال", "باسكال إلى ضغط جوي", "ملم زئبق إلى باسكال", "باسكال إلى ملم زئبق", "ضغط جوي إلى ملم زئبق", "ملم زئبق إلى ضغط جوي"])
+
+        if "ضغط جوي إلى باسكال" in conv_type:
+          pressure = st.number_input(f"الضغط بالضغط الجوي:", value=1.0, step=0.1)
+          if st.button("تحويل"):
+            result = pressure * 101325
+            st.success(f"الضغط بالباسكال: {result:.2f} Pa")
+        elif "باسكال إلى ضغط جوي" in conv_type:
+          pressure = st.number_input(f"الضغط بالباسكال:", value=101325.0, step=1000.0)
+          if st.button("تحويل"):
+            result = pressure / 101325
+            st.success(f"الضغط بالضغط الجوي: {result:.6f} atm")
+        elif "ملم زئبق إلى باسكال" in conv_type:
+          pressure = st.number_input(f"الضغط بملم زئبق:", value=760.0, step=10.0)
+          if st.button("تحويل"):
+            result = pressure * 133.322
+            st.success(f"الضغط بالباسكال: {result:.2f} Pa")
+        elif "باسكال إلى ملم زئبق" in conv_type:
+          pressure = st.number_input(f"الضغط بالباسكال:", value=101325.0, step=1000.0)
+          if st.button("تحويل"):
+            result = pressure / 133.322
+            st.success(f"الضغط بملم زئبق: {result:.2f} mmHg")
+        elif "ضغط جوي إلى ملم زئبق" in conv_type:
+          pressure = st.number_input(f"الضغط بالضغط الجوي:", value=1.0, step=0.1)
+          if st.button("تحويل"):
+            result = pressure * 760
+            st.success(f"الضغط بملم زئبق: {result:.2f} mmHg")
+        elif "ملم زئبق إلى ضغط جوي" in conv_type:
+          pressure = st.number_input(f"الضغط بملم زئبق:", value=760.0, step=10.0)
+          if st.button("تحويل"):
+            result = pressure / 760
+            st.success(f"الضغط بالضغط الجوي: {result:.6f} atm")
+
+
+    elif option == "حساب التركيب المئوي":
+      st.header("حساب التركيب المئوي")
+
+      element_mass = st.number_input("كتلة العنصر (جرام):", min_value=0.0, value=1.0, step=0.1)
+      compound_mass = st.number_input("كتلة المركب (جرام):", min_value=0.0001, value=10.0, step=0.1)
+
+      if st.button("حساب"):
